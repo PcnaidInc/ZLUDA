@@ -1,0 +1,16 @@
+name: ZLUDA
+id: ari:cloud:compass:6a5035f9-5067-4fc8-a1cd-e132f8157385:component/e12b574d-411d-46d7-86a9-791861f57737/6b281037-45ee-414d-a280-758249b76132
+description: CUDA on non-NVIDIA GPUs
+configVersion: 1
+typeId: SERVICE
+fields:
+  tier: 4
+links:
+  - name: null
+    type: REPOSITORY
+    url: https://github.com/PcnaidInc/ZLUDA
+relationships:
+  DEPENDS_ON: []
+labels:
+  - source:github
+customFields: null
