@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  whitespace:
+    name: Check Whitespace
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: |
+          sudo apt install -y fd-find
+          fdfind \
+            --exclude '*.bc' \
+            --exclude '*.exe' \
+            --exclude '*.lib' \
+            --exclude ext/detours \
+            --strip-cwd-prefix \
+            --type file \
+            --exec bash -c '
+              diff \
+                --unified \
+                --label "a/$0" \
+                --label "b/$0" \
+                <(cat "$0") \
+                <(sed --regexp-extended "s/\s+$//; \$a\\" "$0")
+            '
+
+  formatting:
+    name: Check Rust formatting
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
+        with:
+          components: rustfmt
+      - name: Check Rust formatting
+        uses: actions-rust-lang/rustfmt@4066006ec54a31931b9b1fddfd38f2fdf2d27143 # v1
+
+  lint_and_typecheck:
+    name: Clippy and cargo check
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
+        with:
+          components: clippy
+      # These crates are independent of the ROCm/HIP runtime and the
+      # ext/llvm-project and ext/HiGHS submodules, so they can be linted
+      # and type-checked on a plain runner.
+      - name: cargo check
+        run: |
+          cargo check --locked \
+            -p ptx_parser \
+            -p ptx_parser_macros \
+            -p ptx_parser_macros_impl \
+            -p kernel_metadata
+      - name: cargo clippy
+        run: |
+          cargo clippy --locked -- -D warnings \
+            -p ptx_parser \
+            -p ptx_parser_macros \
+            -p ptx_parser_macros_impl \
+            -p kernel_metadata
+
+  build:
+    name: Build (ROCm-independent crates)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
+      # The full GPU build (`cargo xtask zip`) requires the ROCm/HIP runtime
+      # and the ext/llvm-project and ext/HiGHS submodules, which are exercised
+      # by the pr_master and push_master workflows. This job builds the crates
+      # that do not depend on them.
+      - name: cargo build
+        run: |
+          cargo build --locked \
+            -p ptx_parser \
+            -p ptx_parser_macros \
+            -p ptx_parser_macros_impl \
+            -p kernel_metadata
