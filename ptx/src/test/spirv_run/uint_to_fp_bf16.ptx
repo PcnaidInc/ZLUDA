@@ -25,7 +25,7 @@
     ld.u32              value, [in_addr];
     setp.eq.b32         check, value, 1;
 
-    
+
     ld.u32              dispatch, [in_addr+4];
     setp.eq.u32         is_jump, dispatch, 2;
     @is_jump bra U32;

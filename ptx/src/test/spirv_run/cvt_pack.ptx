@@ -12,7 +12,7 @@
     .reg .b32 	    src1;
     .reg .b32       src2;
     .reg .b32 	    src3;
-    
+
     .reg .u32 	    result1;
     .reg .u32 	    result2;
 
