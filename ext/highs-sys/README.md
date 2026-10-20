@@ -7,7 +7,7 @@ Rust binding for the HiGHS linear programming solver.
 See http://highs.dev.
 
 This repository contains the source for HiGHS itself as a submodule.
-You should clone it with 
+You should clone it with
 
 ```
 git clone --recursive git@github.com:rust-or/highs-sys.git
